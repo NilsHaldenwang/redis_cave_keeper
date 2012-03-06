@@ -1,5 +1,5 @@
 require "redis_cave_keeper/version"
 
-module RedisCaveKeeper
+class RedisCaveKeeper
   # Your code goes here...
 end
