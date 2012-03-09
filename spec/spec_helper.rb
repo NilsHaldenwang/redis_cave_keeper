@@ -1,5 +1,7 @@
 require "bundler"
-Bundler.require(:defaults, :development)
+Bundler.require(:development)
+
+require "redis_cave_keeper"
 
 RSpec.configure do |config|
   config.before(:each) do

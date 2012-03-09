@@ -3,7 +3,7 @@ Bundler.require(:defaults, :development)
 
 require "rspec/core/rake_task"
 RSpec::Core::RakeTask.new(:rspec) do |spec|
-  spec.rspec_opts = ["--color"]
+  spec.rspec_opts = ["--color", "--r spec_helper"]
 end
 
 task :default => :rspec
