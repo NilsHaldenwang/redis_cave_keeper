@@ -23,6 +23,25 @@ module RedisCaveKeeper
       end
     end
 
+    def lock_and_load_for_update(&blk)
+      lock_for_update  do
+        blk.call(redis.get(key))
+      end
+    end
+
+    def lock_and_load_and_save(&blk)
+      lock_for_update do
+        blk_return = blk.call(redis.get(key))
+        unless lock_expired?
+          if now < getset_expiration
+            redis.set(key, blk_return) 
+          else
+            raise SaveKeyError, "Can not save key '#{key}', operation took too long." 
+          end
+        end
+      end
+    end
+
     def lock
       raise LockError, "Key '#{key}' is already locked." if has_lock? 
       while !has_lock? && perform_retry

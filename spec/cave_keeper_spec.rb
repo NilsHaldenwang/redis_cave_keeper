@@ -47,6 +47,44 @@ describe CaveKeeper do
       end
     end
 
+    context "#lock_and_load_for_update" do
+      subject { keeper_without_lock }
+
+      it "should load the value for the key and hand it into the block" do
+        redis.set key, "hello world" 
+        subject.lock_and_load_for_update do |value|
+          value.should == "hello world"
+        end
+      end
+    end
+
+    context "#lock_and_load_and_save" do
+      subject { keeper_without_lock }
+
+      before(:each) do
+        value = "hello world"
+        redis.set key, value
+      end
+
+      it "should load the value and overwrite it with the return value of the block" do
+        subject.lock_and_load_and_save do |val|
+          val.should == "hello world"
+          "foo"
+        end
+        redis.get(key).should == "foo"
+      end
+
+      it "should not save when the lock expired while the block was working" do
+        expect do
+          subject.lock_and_load_and_save do |val|
+            redis.set(lock_key, (Time.now.to_i - 10))
+            "foo"
+          end
+        end.to raise_error(UnlockError)
+        redis.get(key).should == "hello world"
+      end
+    end
+
     context "when lock can not be acquired" do
       subject { keeper_with_lock } 
 
