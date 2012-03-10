@@ -13,6 +13,16 @@ module RedisCaveKeeper
       @perform_retry = true
     end
 
+    def lock_for_update(&blk)
+      if lock
+        begin
+          blk.call
+        ensure
+          unlock
+        end
+      end
+    end
+
     def lock
       raise LockError, "Key '#{key}' is already locked." if has_lock? 
       while !has_lock? && perform_retry
