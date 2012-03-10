@@ -1,10 +1,11 @@
-describe RedisCaveKeeper do
+include RedisCaveKeeper
+describe CaveKeeper do
   let(:redis) { Redis.new(db: "redis_cave_keeper_dev") }
 
   let(:key)       { "key-to-lock"  } 
   let(:lock_key)  { "cave-keeper-lock:#{key}"  } 
 
-  let(:keeper_without_lock) { RedisCaveKeeper::CaveKeeper.new(redis, key) } 
+  let(:keeper_without_lock) { CaveKeeper.new(redis, key) } 
   let(:keeper_with_lock)    { keeper_without_lock.tap(&:lock) } 
 
   context "#lock" do
@@ -14,7 +15,7 @@ describe RedisCaveKeeper do
       it "should raise an error if one tries to reacquire the lock" do
         expect do
           subject.lock
-        end.to raise_error(RedisCaveKeeper::LockError)
+        end.to raise_error(LockError)
       end
     end
 
@@ -48,6 +49,8 @@ describe RedisCaveKeeper do
       end
 
       it "should not acquire the lock if someone else acquires it in the middle of the expiration process" do
+        subject.stub(:retry_wait_operation)
+        subject.perform_retry = false
         subject.stub(:lock_expired?) do
           redis.set(lock_key, (Time.now.to_i + 42))
           true
@@ -61,16 +64,18 @@ describe RedisCaveKeeper do
       subject { keeper_without_lock }
 
       before(:each) do
+        Kernel.stub(:sleep)
+      end
+
+      before(:each) do
         redis.set lock_key, ( Time.now.to_i + 10 )
       end
 
       it "should not have a lock if the locking failed" do
-        subject.lock
+        expect do
+          subject.lock
+        end.to raise_error(RetryError)
         subject.should_not have_lock
-      end
-
-      it "should return false on #lock if it fails" do
-        subject.lock.should be_false
       end
     end
   end
@@ -92,7 +97,7 @@ describe RedisCaveKeeper do
 
         expect do
           subject.unlock
-        end.to raise_error(RedisCaveKeeper::UnlockError)
+        end.to raise_error(UnlockError)
       end
     end
 
@@ -102,7 +107,7 @@ describe RedisCaveKeeper do
       it "should raise an error if trying to unlock without lock" do
         expect do
           subject.unlock 
-        end.to raise_error(RedisCaveKeeper::UnlockError)
+        end.to raise_error(UnlockError)
       end
     end
 
@@ -117,7 +122,7 @@ describe RedisCaveKeeper do
       it "should raise an error" do
         expect  do
           subject.unlock
-        end.to raise_error(RedisCaveKeeper::UnlockError)
+        end.to raise_error(UnlockError)
       end
     end
   end
