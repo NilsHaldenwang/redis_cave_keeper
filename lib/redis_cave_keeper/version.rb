@@ -1,3 +1,3 @@
-class RedisCaveKeeper
+module RedisCaveKeeper
   VERSION = "0.0.1"
 end

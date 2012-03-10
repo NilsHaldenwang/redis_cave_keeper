@@ -1,5 +1,5 @@
 require "bundler"
-Bundler.require(:development)
+Bundler.require(:development, :test)
 
 require "redis_cave_keeper"
 

@@ -4,7 +4,7 @@ describe RedisCaveKeeper do
   let(:key)       { "key-to-lock"  } 
   let(:lock_key)  { "cave-keeper-lock:#{key}"  } 
 
-  let(:keeper_without_lock) { RedisCaveKeeper.new(redis, key) } 
+  let(:keeper_without_lock) { RedisCaveKeeper::CaveKeeper.new(redis, key) } 
   let(:keeper_with_lock)    { keeper_without_lock.tap(&:lock) } 
 
   context "#lock" do
