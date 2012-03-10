@@ -3,9 +3,9 @@ require "redis_cave_keeper/version"
 class RedisCaveKeeper
   attr_reader :lock_time, :redis, :lock_key, :timeout, :key
 
-  class CaveKeeperError < StandardError; end
-  class LockError < CaveKeeperError; end
-  class UnlockError < CaveKeeperError; end
+  class CaveKeeperError < StandardError;   end
+  class LockError       < CaveKeeperError; end
+  class UnlockError     < CaveKeeperError; end
 
   def initialize(redis, key, opts = {})
     @redis    = redis

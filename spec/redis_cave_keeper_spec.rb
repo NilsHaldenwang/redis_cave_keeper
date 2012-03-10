@@ -46,6 +46,15 @@ describe RedisCaveKeeper do
         subject.lock
         redis.get(lock_key).to_i.should > Time.now.to_i
       end
+
+      it "should not acquire the lock if someone else acquires it in the middle of the expiration process" do
+        subject.stub(:lock_expired?) do
+          redis.set(lock_key, (Time.now.to_i + 42))
+          true
+        end
+        subject.lock.should be_false
+        subject.should_not have_lock
+      end
     end
 
     context "when the key is locked with a valid timestamp" do
@@ -74,6 +83,17 @@ describe RedisCaveKeeper do
         subject.unlock.should be_true      
         subject.should_not have_lock
       end  
+
+      it "should not unlock if someone else gets a lock in the middle of #unlock_save?" do
+        subject.stub(:lock_expired?) do
+          redis.set lock_key, ( Time.now.to_i - 10)
+          false
+        end
+
+        expect do
+          subject.unlock
+        end.to raise_error(RedisCaveKeeper::UnlockError)
+      end
     end
 
     context "when not locked" do
