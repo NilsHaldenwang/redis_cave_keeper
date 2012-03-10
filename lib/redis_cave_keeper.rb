@@ -100,7 +100,6 @@ module RedisCaveKeeper
     end
 
     def reset
-      @now = nil
       @locked = false
     end
   end
