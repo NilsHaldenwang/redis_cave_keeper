@@ -4,7 +4,7 @@ class RedisCaveKeeper
   attr_reader :lock_time, :redis, :lock_key, :timeout
 
   class CaveKeeperError < StandardError; end
-  class AlreadyLockedError < CaveKeeperError; end
+  class LockFailure < CaveKeeperError; end
 
   def initialize(redis, key, opts = {})
     @redis    = redis
@@ -13,7 +13,7 @@ class RedisCaveKeeper
   end
 
   def lock
-    raise AlreadyLockedError, "Key is already locked." if has_lock? 
+    raise LockFailure, "Key is already locked." if has_lock? 
     unless try_to_acquire_lock
       acquire_lock_if_expired
     end
@@ -27,6 +27,8 @@ class RedisCaveKeeper
   protected
   def acquire_lock_if_expired
     if other_lock_expired?
+      # Use getset here to make sure no one else
+      # acquired a lock in the meantime.
       acquire_lock if now > secure_set_expiration
     end
     reset unless has_lock?

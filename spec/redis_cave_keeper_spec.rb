@@ -13,7 +13,7 @@ describe RedisCaveKeeper do
     it "should raise an error if one tries to reacquire the lock" do
       expect do
         subject.lock
-      end.to raise_error(RedisCaveKeeper::AlreadyLockedError)
+      end.to raise_error(RedisCaveKeeper::LockFailure)
     end
   end
 
