@@ -24,16 +24,15 @@ class RedisCaveKeeper
 
   def unlock
     raise UnlockError, "Key '#{key}' is not locked." unless has_lock?
-    raise UnlockError, "The lock for the key '#{key}' is expired." if lock_expired?
-    if redis.getset(lock_key, ( now + timeout + 1 )).to_i < now 
-      # Someone else acquired the lock via getset.
-      raise UnlockError, "The lock for the key '#{key}' is expired."
-    else
+    if unlock_save?
       # Our lock is extended by timeout + 1, so we safely can
-      # perform a delete.
-      redis.del(lock_key)
+      # release the lock.
+      release_lock 
       reset
       true
+    else
+      # Someone else acquired the lock via getset.
+      raise UnlockError, "The lock for the key '#{key}' is expired."
     end
   end
 
@@ -42,25 +41,43 @@ class RedisCaveKeeper
   end
 
   protected
+  def unlock_save?
+    return false if lock_expired?  
+    return false if getset_expiration < now
+    true
+  end
+
+  def release_lock
+    redis.del(lock_key)
+  end
+
+  def get_lock_expiration
+    redis.get(lock_key).to_i
+  end
+
+  def getset_expiration
+    redis.getset(lock_key, expiration_timestamp).to_i
+  end
+
+  def setnx_expiration
+    redis.setnx(lock_key, expiration_timestamp)  
+  end
+
   def acquire_lock_if_expired
     if lock_expired?
       # Use getset here to make sure no one else
       # acquired a lock in the meantime.
-      acquire_lock if now > secure_set_expiration
+      acquire_lock if now > getset_expiration
     end
     reset_unless_locked
   end
 
   def lock_expired?
-    now > redis.get( lock_key ).to_i
-  end
-
-  def secure_set_expiration
-    redis.getset( lock_key, expiration_timestamp ).to_i
+    now > get_lock_expiration
   end
 
   def try_to_acquire_lock
-    if redis.setnx( lock_key, expiration_timestamp )
+    if setnx_expiration
       acquire_lock
     end
     reset_unless_locked
