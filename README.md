@@ -20,12 +20,14 @@ The necessary class ```CaveKeeper``` lives within the module ```RedisCaveKeeper`
 The ```CaveKeeper``` needs to be instantiated and can be configured through a hash, given to its constructor.
 
 ```ruby
-keeper = CaveKeeper.new(redis,           # redis instance to work on
-                        'key-to-lock',   # redis key that should be locked
-                        timeout: 10      # the time the lock will be valid [seconds], default: 5
-                        max_attempts: 42 # number of retries if the lock can not be acquired immediately, default: 20
-                        sleep_time: 5    # wait time between retries [seconds], default: 0.25
-                       )
+keeper = CaveKeeper.new(
+            redis,           # redis instance to work on
+            'key-to-lock',   # redis key that should be locked
+            timeout: 10      # the time the lock will be valid [seconds], default: 5
+            max_attempts: 42 # number of retries if the lock can not be acquired immediately,
+                             # default: 20
+            sleep_time: 5    # wait time between retries [seconds], default: 0.25
+         
 ```
 
 ### Lock a key to do an update
@@ -62,7 +64,7 @@ keeper.lock_and_load_and_save! do |value|
   # the return value of the given block will be saved back via redis.set("key-to-lock")
   "new-value"
 end
-  # redis.get("key-to-lock") will be "new-value now"
+# redis.get("key-to-lock") will be "new-value now"
 ```
 
 This one bangs with ```RedisCaveKeeper::LockError``` as well if it can not acquire the lock. Before it does the save, it checks
@@ -87,7 +89,7 @@ This gem basically implements the locking algorithm described on the reference p
 of the redis command [SETNX](http://redis.io/commands/setnx "Redis#SETNX").
 
 It is inspired by [@PatrickTulskie](https://github.com/PatrickTulskie)'s [redis-lock](https://github.com/PatrickTulskie/redis-lock "Original redis-lock")
-and the @crowdtap's [fork](https://github.com/crowdtap/redis-lock "Fork of redis-lock") with the refactorings of [@joshuaclayton](https://github.com/joshuaclayton).
+and the [@crowdtap](https://github.com/crowdtap)'s [fork](https://github.com/crowdtap/redis-lock "Fork of redis-lock") with the refactorings of [@joshuaclayton](https://github.com/joshuaclayton).
 
 ## Authors
 Nils Haldenwang (http://www.nils-haldenwang.de)
