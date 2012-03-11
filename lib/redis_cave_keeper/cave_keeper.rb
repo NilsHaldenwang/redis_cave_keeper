@@ -29,17 +29,11 @@ module RedisCaveKeeper
     # Raises RedisCaveKeeper::LockError unless the lock can be acquired.
     # Raises RedisCaveKeeper::UnlockError unless the key can be unlocked.
     def lock_for_update!(&blk)
-      already_unlocked = false
       if lock!
         begin
           blk.call
-        rescue SaveKeyError => e
-          # this is weird but necessary for the SaveKeyError to get through
-          # (patch welcome! :P)
-          already_unlocked = true
-          raise e
         ensure
-          unlock! unless already_unlocked
+          unlock!
         end
       end
     end
@@ -63,14 +57,23 @@ module RedisCaveKeeper
     # RedisCaveKeeper::SaveKeyError when the lock expired during the execution
     # of the given block.
     def lock_and_load_and_save!(&blk)
-      lock_for_update! do
-        blk_return = blk.call(redis.get(key))
-        unless lock_expired?
-          if now < getset_expiration
+      dont_ensure_unlock = false
+
+      if lock!
+        begin
+          value = redis.get(key)
+
+          blk_return = blk.call(value)
+
+          if lock_still_valid_and_extended?
             redis.set(key, blk_return) 
           else
+            reset # our lock is no longer valid if we get here
+            dont_ensure_unlock = true
             raise SaveKeyError, "Cannot save key '#{key}', operation took too long." 
           end
+        ensure
+          unlock! unless dont_ensure_unlock
         end
       end
     end
@@ -127,6 +130,11 @@ module RedisCaveKeeper
     # The key can be safely unlocked within the timeout interval if this
     # method returns true.
     def unlock_save?
+      lock_still_valid_and_extended?
+    end
+
+    protected
+    def lock_still_valid_and_extended?
       if lock_expired?
         false
       elsif getset_expiration < now
@@ -136,13 +144,16 @@ module RedisCaveKeeper
       end
     end
 
-    protected
     def retry_wait_operation
       @retry_manager.run
     end
 
     def release_lock_and_reset
       redis.del(lock_key)
+      reset
+    end
+
+    def reset
       @locked = false
       @retry_manager.reset
     end
