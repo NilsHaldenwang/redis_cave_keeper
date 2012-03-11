@@ -142,7 +142,7 @@ describe CaveKeeper do
 
       it "should not acquire the lock if someone else acquires it in the middle of the expiration process" do
         subject.stub(:retry_wait_operation)
-        subject.perform_retry = false
+        subject.stub(:perform_retry).and_return(false)
         subject.stub(:lock_expired?) do
           redis.set(lock_key, (Time.now.to_i + 42))
           true

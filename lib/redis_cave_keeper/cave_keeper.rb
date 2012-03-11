@@ -1,7 +1,7 @@
 module RedisCaveKeeper
   class CaveKeeper
-    attr_reader :lock_time, :redis, :lock_key, :timeout, :key, :retry_manager
-    attr_accessor :perform_retry
+    attr_reader :lock_time, :redis, :lock_key, :timeout, :key, :retry_manager,
+      :perform_retry
 
     def initialize(redis, key, opts = {})
       @redis    = redis
@@ -10,7 +10,7 @@ module RedisCaveKeeper
       @timeout  = opts[:timeout] || 5
       @retry_manager = DefaultRetryManager.new(opts[:max_attempts],
                                                opts[:sleep_time])
-      @perform_retry = true
+      @perform_retry = true # needed to test the race conditions
     end
 
     def lock_for_update!(&blk)
