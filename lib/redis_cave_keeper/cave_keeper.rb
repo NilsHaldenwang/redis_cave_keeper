@@ -13,24 +13,24 @@ module RedisCaveKeeper
       @perform_retry = true
     end
 
-    def lock_for_update(&blk)
-      if lock
+    def lock_for_update!(&blk)
+      if lock!
         begin
           blk.call
         ensure
-          unlock
+          unlock!
         end
       end
     end
 
-    def lock_and_load_for_update(&blk)
-      lock_for_update  do
+    def lock_and_load_for_update!(&blk)
+      lock_for_update! do
         blk.call(redis.get(key))
       end
     end
 
-    def lock_and_load_and_save(&blk)
-      lock_for_update do
+    def lock_and_load_and_save!(&blk)
+      lock_for_update! do
         blk_return = blk.call(redis.get(key))
         unless lock_expired?
           if now < getset_expiration
@@ -42,7 +42,7 @@ module RedisCaveKeeper
       end
     end
 
-    def lock
+    def lock!
       raise LockError, "Key '#{key}' is already locked." if has_lock? 
       while !has_lock? && perform_retry
         unless try_to_acquire_lock
@@ -54,7 +54,7 @@ module RedisCaveKeeper
       has_lock?
     end
 
-    def unlock
+    def unlock!
       raise UnlockError, "Key '#{key}' is not locked." unless has_lock?
       if unlock_save?
         # Our lock is extended by timeout + 1, so we safely can
@@ -77,9 +77,13 @@ module RedisCaveKeeper
     end
 
     def unlock_save?
-      return false if lock_expired?  
-      return false if getset_expiration < now
-      true
+      if lock_expired?
+        false
+      elsif
+        getset_expiration < now
+      else
+        true
+      end
     end
 
     def release_lock_and_reset

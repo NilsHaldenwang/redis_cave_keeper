@@ -6,7 +6,7 @@ describe CaveKeeper do
   let(:lock_key)  { "cave-keeper-lock:#{key}"  } 
 
   let(:keeper_without_lock) { CaveKeeper.new(redis, key) } 
-  let(:keeper_with_lock)    { keeper_without_lock.tap(&:lock) } 
+  let(:keeper_with_lock)    { keeper_without_lock.tap(&:lock!) } 
 
   context "#lock_for_update" do
     context "when lock can be acquired" do
@@ -14,21 +14,21 @@ describe CaveKeeper do
 
       it "should execute the given block" do
         test_var = "test"
-        subject.lock_for_update  do
+        subject.lock_for_update!  do
           test_var = "foo"
         end
         test_var.should == "foo"
       end
 
       it "should lock the key during execution" do
-        subject.lock_for_update do
+        subject.lock_for_update! do
           subject.should have_lock
         end
       end
 
       it "should ensure unlock if the block raises an error" do
         expect do
-          subject.lock_for_update do
+          subject.lock_for_update! do
             raise StandardError, "Just a test raise."
           end
         end.to raise_error(StandardError, "Just a test raise.")
@@ -38,7 +38,7 @@ describe CaveKeeper do
       it "runs the block but raises an error if the unlock fails" do
         test_var = "test"
         expect do
-          subject.lock_for_update do
+          subject.lock_for_update! do
             redis.del(lock_key)     
             test_var = "foo"
           end
@@ -52,7 +52,7 @@ describe CaveKeeper do
 
       it "should load the value for the key and hand it into the block" do
         redis.set key, "hello world" 
-        subject.lock_and_load_for_update do |value|
+        subject.lock_and_load_for_update! do |value|
           value.should == "hello world"
         end
       end
@@ -67,7 +67,7 @@ describe CaveKeeper do
       end
 
       it "should load the value and overwrite it with the return value of the block" do
-        subject.lock_and_load_and_save do |val|
+        subject.lock_and_load_and_save! do |val|
           val.should == "hello world"
           "foo"
         end
@@ -76,7 +76,7 @@ describe CaveKeeper do
 
       it "should not save when the lock expired while the block was working" do
         expect do
-          subject.lock_and_load_and_save do |val|
+          subject.lock_and_load_and_save! do |val|
             redis.set(lock_key, (Time.now.to_i - 10))
             "foo"
           end
@@ -91,7 +91,7 @@ describe CaveKeeper do
       it "should not run the block and raise" do
         test_var = "foo"
         expect do
-          subject.lock_for_update do
+          subject.lock_for_update! do
             test_var = "var" 
           end
         end.to raise_error(LockError)
@@ -106,7 +106,7 @@ describe CaveKeeper do
 
       it "should raise an error if one tries to reacquire the lock" do
         expect do
-          subject.lock
+          subject.lock!
         end.to raise_error(LockError)
       end
     end
@@ -115,11 +115,11 @@ describe CaveKeeper do
       subject { keeper_without_lock }
 
       it "should be able to acquire the lock if the key is not locked" do
-        subject.lock.should be_true
+        subject.lock!.should be_true
       end
 
       it "should be locked after successfully acquiring a lock" do
-        subject.lock
+        subject.lock!
         subject.should have_lock
       end
     end
@@ -132,11 +132,11 @@ describe CaveKeeper do
       end
 
       it "should be able to get the lock, if the timestamp is expired" do
-        subject.lock.should be_true
+        subject.lock!.should be_true
       end
 
       it "should set an expiration time in the future" do
-        subject.lock
+        subject.lock!
         redis.get(lock_key).to_i.should > Time.now.to_i
       end
 
@@ -147,7 +147,7 @@ describe CaveKeeper do
           redis.set(lock_key, (Time.now.to_i + 42))
           true
         end
-        subject.lock.should be_false
+        subject.lock!.should be_false
         subject.should_not have_lock
       end
     end
@@ -165,7 +165,7 @@ describe CaveKeeper do
 
       it "should not have a lock if the locking failed" do
         expect do
-          subject.lock
+          subject.lock!
         end.to raise_error(RetryError)
         subject.should_not have_lock
       end
@@ -177,7 +177,7 @@ describe CaveKeeper do
       subject { keeper_with_lock }
 
       it "unlocks successfully" do
-        subject.unlock.should be_true      
+        subject.unlock!.should be_true      
         subject.should_not have_lock
       end  
 
@@ -188,7 +188,7 @@ describe CaveKeeper do
         end
 
         expect do
-          subject.unlock
+          subject.unlock!
         end.to raise_error(UnlockError)
       end
     end
@@ -198,7 +198,7 @@ describe CaveKeeper do
 
       it "should raise an error if trying to unlock without lock" do
         expect do
-          subject.unlock 
+          subject.unlock! 
         end.to raise_error(UnlockError)
       end
     end
@@ -213,7 +213,7 @@ describe CaveKeeper do
 
       it "should raise an error" do
         expect  do
-          subject.unlock
+          subject.unlock!
         end.to raise_error(UnlockError)
       end
     end
