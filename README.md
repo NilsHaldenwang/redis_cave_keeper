@@ -85,6 +85,21 @@ keeper.unlock! # Bangs with RedisCaveKeeper::UnlockError if it fails (e.g. becau
 
 See the API documentation for more information about some helpful methods for manually handling the locking.
 
+#### Error handling
+
+All the errors inherit from ```RedisCaveKeeper::CaveKeeperError```, so if you
+do not care which one it is you can do something like:
+
+```ruby
+begin
+  # your stuff here
+rescue RedisCaveKeeper::CaveKeeperError => e
+  # do something with the error here
+end
+```
+Since any kind of Pokemon-Exception-Handling is bad you should not do this, but it may
+sometimes be necessary and is still better than ```rescue Exception```.
+
 ## Credits
 
 This gem basically implements the locking algorithm described on the reference page
