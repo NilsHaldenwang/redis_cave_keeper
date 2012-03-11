@@ -28,7 +28,7 @@ keeper = CaveKeeper.new(
             max_attempts: 42 # number of retries if the lock can not be acquired immediately,
                              # default: 20
             sleep_time: 5    # wait time between retries [seconds],
-                             # default: 0.25
+         )                   # default: 0.25
          
 ```
 
