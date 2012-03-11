@@ -5,7 +5,7 @@ describe DefaultRetryManager do
   it "should raise an error after 10 retries" do
     Kernel.stub(:sleep)
     expect do
-      11.times do
+      26.times do
         manager.run
       end
     end.to raise_error(RetryError)

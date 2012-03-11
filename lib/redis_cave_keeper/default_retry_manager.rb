@@ -2,8 +2,8 @@ module RedisCaveKeeper
   class DefaultRetryManager
     attr_reader :attempt_count
 
-    def initialize(max_attempts = 10, sleep_time = 0.25)
-      @max_attempts  = max_attempts || 10
+    def initialize(max_attempts = 25, sleep_time = 0.25)
+      @max_attempts  = max_attempts || 25
       @sleep_time    = sleep_time   || 0.25
       @attempt_count = 0
     end
