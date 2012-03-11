@@ -91,7 +91,7 @@ This gem basically implements the locking algorithm described on the reference p
 of the redis command [SETNX](http://redis.io/commands/setnx "Redis#SETNX").
 
 It is inspired by [@PatrickTulskie](https://github.com/PatrickTulskie)'s [redis-lock](https://github.com/PatrickTulskie/redis-lock "Original redis-lock")
-and the [@crowdtap](https://github.com/crowdtap)'s [fork](https://github.com/crowdtap/redis-lock "Fork of redis-lock") with the refactorings of [@joshuaclayton](https://github.com/joshuaclayton).
+and [@crowdtap](https://github.com/crowdtap)'s [fork](https://github.com/crowdtap/redis-lock "Fork of redis-lock") with the refactorings of [@joshuaclayton](https://github.com/joshuaclayton).
 
 ## Authors
 Nils Haldenwang (http://www.nils-haldenwang.de)
