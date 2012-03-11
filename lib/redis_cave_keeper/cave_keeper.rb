@@ -78,9 +78,8 @@ module RedisCaveKeeper
       @locked  
     end
 
-    protected
-    def retry_wait_operation
-      @retry_manager.run
+    def lock_expired?
+      now > get_lock_expiration
     end
 
     def unlock_save?
@@ -91,6 +90,11 @@ module RedisCaveKeeper
       else
         true
       end
+    end
+
+    protected
+    def retry_wait_operation
+      @retry_manager.run
     end
 
     def release_lock_and_reset
@@ -118,10 +122,6 @@ module RedisCaveKeeper
         acquire_lock if now > getset_expiration
       end
       has_lock?
-    end
-
-    def lock_expired?
-      now > get_lock_expiration
     end
 
     def try_to_acquire_lock

@@ -15,6 +15,6 @@ end
 
 require 'rdoc/task'
 Rake::RDocTask.new do |rd|
-  rd.main = "README"
-  rd.rdoc_files.include("README", "lib/**/*.rb")
+  rd.main = "README.md"
+  rd.rdoc_files.include("README.md", "lib/**/*.rb")
 end
