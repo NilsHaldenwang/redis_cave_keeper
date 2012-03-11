@@ -75,12 +75,12 @@ describe CaveKeeper do
       end
 
       it "should not save when the lock expired while the block was working" do
+        subject.stub(:getset_expiration).and_return(Time.now.to_i - 10)
         expect do
           subject.lock_and_load_and_save! do |val|
-            redis.set(lock_key, (Time.now.to_i - 10))
             "foo"
           end
-        end.to raise_error(UnlockError)
+        end.to raise_error(SaveKeyError)
         redis.get(key).should == "hello world"
       end
     end

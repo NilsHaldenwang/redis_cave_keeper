@@ -14,11 +14,17 @@ module RedisCaveKeeper
     end
 
     def lock_for_update!(&blk)
+      already_unlocked = false
       if lock!
         begin
           blk.call
+        rescue SaveKeyError => e
+          # this is weird but necessary for the SaveKeyError to get through
+          # (patch welcome! :P)
+          already_unlocked = true
+          raise e
         ensure
-          unlock!
+          unlock! unless already_unlocked
         end
       end
     end
@@ -36,7 +42,7 @@ module RedisCaveKeeper
           if now < getset_expiration
             redis.set(key, blk_return) 
           else
-            raise SaveKeyError, "Can not save key '#{key}', operation took too long." 
+            raise SaveKeyError, "Cannot save key '#{key}', operation took too long." 
           end
         end
       end
