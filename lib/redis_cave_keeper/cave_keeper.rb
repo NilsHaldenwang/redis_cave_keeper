@@ -80,8 +80,8 @@ module RedisCaveKeeper
     def unlock_save?
       if lock_expired?
         false
-      elsif
-        getset_expiration < now
+      elsif getset_expiration < now
+        false
       else
         true
       end
