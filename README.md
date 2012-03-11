@@ -1,6 +1,6 @@
-# redis\_cave\_keeper
+# Redis Cave Keeper
 
-The redis\_cave\_keeper provides some convenient methods for locking and updating redis keys.
+This gem provides some convenient methods for locking and updating redis keys.
 
 ## Installation
 
