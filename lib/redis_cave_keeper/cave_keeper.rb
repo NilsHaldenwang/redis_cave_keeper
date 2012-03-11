@@ -3,6 +3,15 @@ module RedisCaveKeeper
     attr_reader :lock_time, :redis, :lock_key, :timeout, :key, :retry_manager,
       :perform_retry
 
+
+    # Valid configuration options:
+    #   :timeout      - interval how long the lock will be valid [seconds]
+    #   :max_attempts - number of retries if the lock can not be acquired immediately 
+    #   :sleep_time   - time to sleep between retries [seconds]
+    #
+    # @param [Redis] redis an active redis connection
+    # @param [String] key the key to lock
+    # @param [Hash] opts configuration options
     def initialize(redis, key, opts = {})
       @redis    = redis
       @key      = key
@@ -13,6 +22,12 @@ module RedisCaveKeeper
       @perform_retry = true # needed to test the race conditions
     end
 
+    # Locks the key, executes the given block and unlocks it afterwards.
+    #
+    # See #lock! for more information on the retry behaviour.
+    #
+    # Raises RedisCaveKeeper::LockError unless the lock can be acquired.
+    # Raises RedisCaveKeeper::UnlockError unless the key can be unlocked.
     def lock_for_update!(&blk)
       already_unlocked = false
       if lock!
@@ -29,12 +44,24 @@ module RedisCaveKeeper
       end
     end
 
+    # Behaves widely like #lock_for_update.
+    #
+    # Additionally it loads the value for the key and yields it to the block.
     def lock_and_load_for_update!(&blk)
       lock_for_update! do
         blk.call(redis.get(key))
       end
     end
 
+    # Behaves widely like #lock_and_load_for_update.
+    #
+    # Additionally it tries to save the return value of the block as new
+    # value for the key to redis. It makes sure the lock did not time out
+    # before saving.
+    #
+    # Instead of raising RedisCaveKeeper::UnlockError it raises
+    # RedisCaveKeeper::SaveKeyError when the lock expired during the execution
+    # of the given block.
     def lock_and_load_and_save!(&blk)
       lock_for_update! do
         blk_return = blk.call(redis.get(key))
@@ -48,6 +75,12 @@ module RedisCaveKeeper
       end
     end
 
+    # Tries to acquire the lock. Performs the configured number of retries (default: 25)
+    # and sleeps sleep_time (default: 0.25s) in between.
+    #
+    # See #initialize for the configuration options.
+    #
+    # Raises RedisCaveKeeper::LockError unless the lock can be acquired.
     def lock!
       raise LockError, "Key '#{key}' is already locked." if has_lock? 
       while !has_lock? && perform_retry
@@ -74,14 +107,25 @@ module RedisCaveKeeper
       end
     end
 
+    # Indicates if the CaveKeeper had been able to
+    # acquire a lock. This should NOT be used to check
+    # if the lock is expired, because it is does not
+    # check this.
     def has_lock?
       @locked  
     end
 
+    # Checks if the lock of the key is expired.
     def lock_expired?
       now > get_lock_expiration
     end
 
+    # Returns false if the lock is expired.
+    # If it is still valid it tries to extend the expiration time
+    # with an getset operation. If this fails it returns false.
+    #
+    # The key can be safely unlocked within the timeout interval if this
+    # method returns true.
     def unlock_save?
       if lock_expired?
         false

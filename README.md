@@ -23,10 +23,12 @@ The ```CaveKeeper``` needs to be instantiated and can be configured through a ha
 keeper = CaveKeeper.new(
             redis,           # redis instance to work on
             'key-to-lock',   # redis key that should be locked
-            timeout: 10      # the time the lock will be valid [seconds], default: 5
+            timeout: 10      # the time the lock will be valid [seconds],
+                             # default: 5
             max_attempts: 42 # number of retries if the lock can not be acquired immediately,
                              # default: 20
-            sleep_time: 5    # wait time between retries [seconds], default: 0.25
+            sleep_time: 5    # wait time between retries [seconds],
+                             # default: 0.25
          
 ```
 
