@@ -5,3 +5,5 @@ pkg/*
 .*swp
 *.rdb
 examples/
+html/
+README.html
