@@ -62,7 +62,8 @@ module RedisCaveKeeper
         release_lock_and_reset
         true
       else
-        # Someone else acquired the lock via getset.
+        # Someone else acquired the lock via getset since we first
+        # checked if the lock is still valid via get.
         raise UnlockError, "The lock for the key '#{key}' is expired."
       end
     end
