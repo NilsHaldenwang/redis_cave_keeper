@@ -26,7 +26,7 @@ keeper = CaveKeeper.new(
             timeout: 10      # the time the lock will be valid [seconds],
                              # default: 5
             max_attempts: 42 # number of retries if the lock can not be acquired immediately,
-                             # default: 20
+                             # default: 25
             sleep_time: 5    # wait time between retries [seconds],
          )                   # default: 0.25
          
@@ -66,7 +66,7 @@ keeper.lock_and_load_and_save! do |value|
   # the return value of the given block will be saved back via redis.set("key-to-lock")
   "new-value"
 end
-# redis.get("key-to-lock") will be "new-value now"
+# redis.get("key-to-lock") will be "new-value" now
 ```
 
 This one bangs with ```RedisCaveKeeper::LockError``` as well if it can not acquire the lock. Before it does the save, it checks
